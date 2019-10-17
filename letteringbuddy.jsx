@@ -25,7 +25,7 @@ if (scriptFile != "" && scriptFile != null && scriptFileName.indexOf(".txt") !==
     list.selection = 0;
     dialog.show();
 
-    doc.addEventListener('afterSelectionChanged', selectionChanged());
+    doc.addEventListener('afterSelectionChanged', selectionChanged);
 
     function selectionChanged() {
         if (doc.selection[0] instanceof TextFrame && doc.selection[0].contents == '') {
