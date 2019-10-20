@@ -2,6 +2,8 @@
 General InDesign Scripts primarily designed for use in manga lettering
 
 ## Letterer Buddy
+![](https://i.imgur.com/4FQ4c38.png)
+
 Allows you to load a script in a .txt file and automatically input lines into text frames as they're being created (in a similar vein to Typesetterer). At the moment, it simply takes a text file and reads it line by line, so some prior formatting will be required to make it output properly.
 
 ### Usage
