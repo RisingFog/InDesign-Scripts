@@ -5,9 +5,6 @@ var script = [];
 var scriptFile = null;
 var scriptFileName = null;
 
-openScript();
-readScript();
-
 // DIALOG
 // ======
 var dialog = new Window("palette"); 
@@ -158,35 +155,43 @@ function populateList() {
         alert("This file type is not supported. Please use .txt files only.");
         return;
     }
-    list.removeAll();
-    for (var i=0; i<script.length; i++) {
-        list.add('item', script[i]);
+    else if (scriptFile != "" && scriptFile != null) {
+        list.removeAll();
+        for (var i=0; i<script.length; i++) {
+            list.add('item', script[i]);
+        }
+        list.selection = 0;
     }
-    list.selection = 0;
 }
 
 function readScript() {
-    scriptFile.open("r");
-    script = [];
-    var lines = scriptFile.read();
-    var lineList = lines.split('\n');
-    for (var i=0; i<lineList.length; i++) {
-        var line = lineList[i];
-        if (line != '') {
-            script.push(line.replace('\t', ''));
+    if (scriptFile != "" && scriptFile != null) {
+        scriptFile.open("r");
+        script = [];
+        var lines = scriptFile.read();
+        var lineList = lines.split('\n');
+        for (var i=0; i<lineList.length; i++) {
+            var line = lineList[i];
+            if (line != '') {
+                script.push(line.replace('\t', ''));
+            }
         }
     }
 }
 
 function openScript() {
+    var scriptFileOld = scriptFile;
     scriptFile = File.openDialog("Select your script text file");
     if (scriptFile != null) {
         scriptFileName = scriptFile.name; 
     }
+    else if (scriptFileOld != null && scriptFile == null) {
+        scriptFile = scriptFileOld;
+    }
 }
 
 function resetOptions() {
-        speakerText.value = 0;
-        crossbarI.value = 0;
-        ellipses.value = 0;
+    speakerText.value = 0;
+    crossbarI.value = 0;
+    ellipses.value = 0;
 }
