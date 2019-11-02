@@ -4,10 +4,15 @@ var doc = app.activeDocument;
 var script = [];
 var scriptFile = null;
 var scriptFileName = null;
+var lastScriptPath = null;
+var newScript = true;
+var lastScriptIndex = 0;
+
+var directory = new File($.fileName).parent;
 
 // DIALOG
 // ======
-var dialog = new Window("palette"); 
+var dialog = new Window("window", undefined, undefined, {maximizeButton: false}); 
     dialog.text = "Letterer Buddy"; 
     dialog.orientation = "column"; 
     dialog.alignChildren = ["center","top"]; 
@@ -15,102 +20,38 @@ var dialog = new Window("palette");
     dialog.margins = 16; 
     dialog.onClose = function() {
         doc.removeEventListener('afterSelectionChanged', selectionChanged);
-    }
+        saveOptions();
+    };
 
-// SCRIPTPANEL
-// ===========
-var scriptPanel = dialog.add("panel", undefined, undefined, {name: "scriptPanel"}); 
-    scriptPanel.text = "Script"; 
-    scriptPanel.orientation = "column"; 
-    scriptPanel.alignChildren = ["left","top"]; 
-    scriptPanel.spacing = 10; 
-    scriptPanel.margins = 10; 
+// TPANEL1
+// =======
+var tpanel1 = dialog.add("tabbedpanel", undefined, undefined, {name: "tpanel1"}); 
+    tpanel1.alignChildren = "fill"; 
+    tpanel1.preferredSize.width = 324; 
+    tpanel1.margins = 0; 
 
-var list = scriptPanel.add("listbox", undefined, undefined, {name: "list"}); 
+// SCRIPTTAB
+// =========
+var scriptTab = tpanel1.add("tab", undefined, undefined, {name: "scriptTab"}); 
+    scriptTab.text = "Script"; 
+    scriptTab.orientation = "column"; 
+    scriptTab.alignChildren = ["left","top"]; 
+    scriptTab.spacing = 10; 
+    scriptTab.margins = 10; 
+
+var list = scriptTab.add("listbox", undefined, undefined, {name: "list"}); 
     list.preferredSize.width = 300; 
     list.preferredSize.height = 150; 
-    populateList() 
-
-// SETTINGSPANEL
-// =============
-var settingsPanel = dialog.add("panel", undefined, undefined, {name: "settingsPanel"}); 
-    settingsPanel.text = "Settings"; 
-    settingsPanel.orientation = "row"; 
-    settingsPanel.alignChildren = ["left","top"]; 
-    settingsPanel.spacing = 10; 
-    settingsPanel.margins = 10; 
-
-// OPTIONSPANEL
-// ============
-var optionsPanel = settingsPanel.add("panel", undefined, undefined, {name: "optionsPanel"}); 
-    optionsPanel.text = "Options"; 
-    optionsPanel.orientation = "column"; 
-    optionsPanel.alignChildren = ["left","top"]; 
-    optionsPanel.spacing = 10; 
-    optionsPanel.margins = 10; 
-
-var speakerText = optionsPanel.add("checkbox", undefined, undefined, {name: "speakerText"}); 
-    speakerText.text = "Remove Speaker Text"; 
-    speakerText.onClick = function() {
-    if (list != null) {
-        if (speakerText.value) {
-            var regex = /^\w+:\s?/
-            for (var i=0; i<script.length; i++) {
-                if (script[i].match(regex)) {
-                    script[i] = script[i].replace(regex, "");
-                }
-            }
-        }
-        populateList();
-    }
-};
-
-var crossbarI = optionsPanel.add("checkbox", undefined, undefined, {name: "crossbarI"}); 
-    crossbarI.text = "Replace Crossbar I"; 
-    crossbarI.onClick = function() {
-    if (list != null) {
-        if (crossbarI.value == 1) {
-            var regex = /\bI\B/
-            for (var i=0; i<script.length; i++) {
-                if (script[i].match(regex)) {
-                    script[i] = script[i].replace(regex, "i");
-                }
-            }
-        }
-        populateList() 
-    }
-};
-
-var ellipses = optionsPanel.add("checkbox", undefined, undefined, {name: "ellipses"}); 
-    ellipses.text = "Replace Ellipses with Periods"; 
-    ellipses.onClick = function() {
-    if (list != null) {
-        if (ellipses.value == 1) {
-            for (var i=0; i<list.items.length; i++) {
-                if (script[i].match("…")) {
-                    script[i] = script[i].replace("…", "...");
-                }
-            }
-        }
-        else if (ellipses.value == 0) {
-            for (var i=0; i<list.items.length; i++) {
-                if (script[i].match("...")) {
-                    script[i] = script[i].replace("...", "…");
-                }
-            }
-        }
-        populateList() 
-    }
-};
 
 // ACTIONSPANEL
 // ============
-var actionsPanel = settingsPanel.add("panel", undefined, undefined, {name: "actionsPanel"}); 
+var actionsPanel = scriptTab.add("panel", undefined, undefined, {name: "actionsPanel"}); 
     actionsPanel.text = "Actions"; 
-    actionsPanel.orientation = "column"; 
-    actionsPanel.alignChildren = ["left","top"]; 
+    actionsPanel.orientation = "row"; 
+    actionsPanel.alignChildren = ["center","top"]; 
     actionsPanel.spacing = 10; 
     actionsPanel.margins = 10; 
+    actionsPanel.preferredSize.width = 300;
 
 var loadScript = actionsPanel.add("button", undefined, undefined, {name: "loadScript"}); 
     loadScript.text = "Load Script"; 
@@ -129,12 +70,66 @@ var resetScript = actionsPanel.add("button", undefined, undefined, {name: "reset
         populateList();
     };
 
+// SETTINGSTAB
+// ===========
+var settingsTab = tpanel1.add("tab", undefined, undefined, {name: "settingsTab"}); 
+    settingsTab.text = "Settings"; 
+    settingsTab.orientation = "column"; 
+    settingsTab.alignChildren = ["left","top"]; 
+    settingsTab.spacing = 10; 
+    settingsTab.margins = 10; 
+
+var speakerText = settingsTab.add("checkbox", undefined, undefined, {name: "speakerText"}); 
+    speakerText.text = "Remove Speaker Text"; 
+    speakerText.onClick = function() {
+    if (list != null) {
+        speakerTextFunction();
+        populateList();
+    }
+};
+
+var crossbarI = settingsTab.add("checkbox", undefined, undefined, {name: "crossbarI"}); 
+    crossbarI.text = "Replace Crossbar I"; 
+    crossbarI.onClick = function() {
+    if (list != null) {
+        crossbarIFunction();
+        populateList();
+    }
+};
+
+var ellipses = settingsTab.add("checkbox", undefined, undefined, {name: "ellipses"}); 
+    ellipses.text = "Replace Ellipses with Periods"; 
+    ellipses.onClick = function() {
+    if (list != null) {
+        ellipsesFunction();
+        populateList() ;
+    }
+};
+
+var saveSettings = settingsTab.add("checkbox", undefined, undefined, {name: "saveSettings"}); 
+    saveSettings.text = "Save Settings";
+
+var loadLastScript = settingsTab.add("checkbox", undefined, undefined, {name: "loadLastScript"}); 
+    loadLastScript.text = "Load Last Script"; 
+
+loadOptions();
+
+if (loadLastScript.value && lastScriptPath != null) {
+    openScript();
+    readScript();
+    populateList();
+    speakerTextFunction();
+    crossbarIFunction();
+    ellipsesFunction();
+    populateList(); // Done again to also apply any of the above options if selected
+}
+
 dialog.show();
 
 doc.addEventListener('afterSelectionChanged', selectionChanged);
 
 function selectionChanged() {
-    if (doc.selection[0] instanceof TextFrame && doc.selection[0].contents == '') {
+    if (doc.selection[0] instanceof TextFrame && doc.selection[0].contents == '' && doc.selection[1] == null) {
         placeText();
     }
 }
@@ -160,7 +155,12 @@ function populateList() {
         for (var i=0; i<script.length; i++) {
             list.add('item', script[i]);
         }
-        list.selection = 0;
+        if (newScript) {
+            list.selection = 0;
+        }
+        else {
+            list.selection = lastScriptIndex;
+        }
     }
 }
 
@@ -181,7 +181,14 @@ function readScript() {
 
 function openScript() {
     var scriptFileOld = scriptFile;
-    scriptFile = File.openDialog("Select your script text file");
+    if (scriptFile == null && loadLastScript.value && lastScriptPath != null) {
+        scriptFile = File(lastScriptPath);
+        newScript = 0;
+    }
+    else {
+        scriptFile = File.openDialog("Select your script text file");
+        newScript = 1;
+    }
     if (scriptFile != null) {
         scriptFileName = scriptFile.name; 
     }
@@ -194,4 +201,96 @@ function resetOptions() {
     speakerText.value = 0;
     crossbarI.value = 0;
     ellipses.value = 0;
+
+}
+
+function loadOptions() {
+    var optionsFile = new File(directory.toString() + "/lbsettings.txt");
+    if (optionsFile.exists) {
+        optionsFile.open("r");
+        while (!optionsFile.eof) {
+            var line = optionsFile.readln();
+            var option = line.split("=");
+            if (option[0] == "speakerText") {
+                speakerText.value = (option[1] == "true");
+            }
+            if (option[0] == "crossbarI") {
+                crossbarI.value = (option[1] == "true");
+            }
+            if (option[0] == "ellipses") {
+                ellipses.value = (option[1] == "true");
+            }
+            if (option[0] == "saveSettings") {
+                saveSettings.value = (option[1] == "true");
+            }
+            if (option[0] == "loadLastScript") {
+                loadLastScript.value = (option[1] == "true");
+            }
+            if (option[0] == "lastScriptPath") {
+                lastScriptPath = option[1];
+            }
+            if (option[0] == "scriptIndex") {
+                lastScriptIndex = option[1];
+            }
+        }
+    }
+}
+
+function saveOptions() {
+    var optionsFile = new File(directory.toString() + "/lbsettings.txt");
+    optionsFile.open("w");
+    if (saveSettings.value) {
+        optionsFile.writeln("speakerText=" + speakerText.value);
+        optionsFile.writeln("crossbarI=" + crossbarI.value);
+        optionsFile.writeln("ellipses=" + ellipses.value);
+        optionsFile.writeln("saveSettings=" + saveSettings.value);
+        optionsFile.writeln("loadLastScript=" + loadLastScript.value);
+        if (loadLastScript.value) {
+            if (list.selection != null) {
+                optionsFile.writeln("scriptIndex=" + list.selection);
+            }
+            if (scriptFile != null) {
+                optionsFile.writeln("lastScriptPath=" + scriptFile.toString());
+            }
+        }
+    }
+}
+
+function speakerTextFunction() {
+    if (speakerText.value) {
+        var regex = /^\w+:\s?/
+        for (var i=0; i<script.length; i++) {
+            if (script[i].match(regex)) {
+                script[i] = script[i].replace(regex, "");
+            }
+        }
+    }
+}
+
+function crossbarIFunction() {
+    if (crossbarI.value) {
+        var regex = /\bI\B/
+        for (var i=0; i<script.length; i++) {
+            if (script[i].match(regex)) {
+                script[i] = script[i].replace(regex, "i");
+            }
+        }
+    }
+}
+
+function ellipsesFunction() {
+    if (ellipses.value == 1) {
+        for (var i=0; i<list.items.length; i++) {
+            if (script[i].match("…")) {
+                script[i] = script[i].replace("…", "...");
+            }
+        }
+    }
+    else if (ellipses.value == 0) {
+        for (var i=0; i<list.items.length; i++) {
+            if (script[i].match("...")) {
+                script[i] = script[i].replace("...", "…");
+            }
+        }
+    }
 }
