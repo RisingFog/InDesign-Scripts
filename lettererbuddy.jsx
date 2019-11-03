@@ -76,7 +76,7 @@ var settingsTab = tpanel1.add("tab", undefined, undefined, {name: "settingsTab"}
     settingsTab.text = "Settings"; 
     settingsTab.orientation = "column"; 
     settingsTab.alignChildren = ["left","top"]; 
-    settingsTab.spacing = 2; 
+    settingsTab.spacing = 0; 
     settingsTab.margins = 10; 
 
 var speakerText = settingsTab.add("checkbox", undefined, undefined, {name: "speakerText"}); 
@@ -125,13 +125,16 @@ var removeJP = settingsTab.add("checkbox", undefined, undefined, {name: "removeJ
 };
 
 var replaceSplit = settingsTab.add("checkbox", undefined, undefined, {name: "replaceSplit"}); 
-    replaceSplit.text = "Replace // with New Line"; 
+    replaceSplit.text = "Replace Bubble Separator with New Line"; 
     replaceSplit.onClick = function() {
     if (list != null) {
         replaceSplitFunction();
         populateList() ;
     }
 };
+
+var splitText = settingsTab.add('edittext {properties: {name: "splitText"}}'); 
+    splitText.text = "//"; 
 
 var removePageNumbers = settingsTab.add("checkbox", undefined, undefined, {name: "removePageNumbers"}); 
     removePageNumbers.text = "Remove Page Numbers"; 
@@ -180,7 +183,6 @@ loadOptions();
 if (loadLastScript.value && lastScriptPath != null) {
     openScript();
     readScript();
-    populateList();
     speakerTextFunction();
     crossbarIFunction();
     ellipsesFunction();
@@ -191,7 +193,7 @@ if (loadLastScript.value && lastScriptPath != null) {
     removeParentheticalTextFunction();
     removeBracketedTextFunction();
     removeCurlyBracedTextFunction();
-    populateList(); // Done again to also apply any of the above options if selected
+    populateList();
 }
 
 dialog.show();
@@ -317,6 +319,9 @@ function loadOptions() {
             if (option[0] == "replaceSplit") {
                 replaceSplit.value = (option[1] == "true");
             }
+            if (option[0] == "splitText") {
+                splitText.text = option[1];
+            }
             if (option[0] == "removePageNumbers") {
                 removePageNumbers.value = (option[1] == "true");
             }
@@ -353,6 +358,7 @@ function saveOptions() {
         }
         optionsFile.writeln("removeJP=" + removeJP.value);
         optionsFile.writeln("replaceSplit=" + replaceSplit.value);
+        optionsFile.writeln("splitText=" + splitText.text);
         optionsFile.writeln("removePageNumbers=" + removePageNumbers.value);
         optionsFile.writeln("removeParentheticalText=" + removeParentheticalText.value);
         optionsFile.writeln("removeBracketedText=" + removeBracketedText.value);
@@ -373,10 +379,22 @@ function speakerTextFunction() {
 
 function crossbarIFunction() {
     if (crossbarI.value) {
-        var regex = /\bI\B/
+        var regex = /\bI\B/g
         for (var i=0; i<script.length; i++) {
             if (script[i].match(regex)) {
                 script[i] = script[i].replace(regex, "i");
+            }
+        }
+        regex = /\bI-i\B/g
+        for (var i=0; i<script.length; i++) {
+            if (script[i].match(regex)) {
+                script[i] = script[i].replace(regex, "i-i");
+            }
+        }
+        regex = /\bI—i\B/g
+        for (var i=0; i<script.length; i++) {
+            if (script[i].match(regex)) {
+                script[i] = script[i].replace(regex, "i-i");
             }
         }
     }
@@ -412,7 +430,7 @@ function trimPeriodsFunction() {
 
 function removeJPFunction() {
     if (removeJP.value) {
-        var regex = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]+/
+        var regex = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/g
         for (var i=0; i<script.length; i++) {
             if (script[i].match(regex)) {
                 script[i] = trim(script[i].replace(regex, ""));
@@ -424,10 +442,10 @@ function removeJPFunction() {
 
 function replaceSplitFunction() {
     if (replaceSplit.value) {
-        var regex = /[\/\/]/
+        var regex = RegExp(splitText.text);
         for (var i=0; i<script.length; i++) {
             if (script[i].match(regex)) {
-                var lines = script[i].split('//');
+                var lines = script[i].split(splitText.text);
                 for (var j=0; j<lines.length; j++) {
                     if (j==0) {
                         script[i] = trim(lines[0]);
