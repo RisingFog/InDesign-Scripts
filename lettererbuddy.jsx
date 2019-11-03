@@ -41,7 +41,7 @@ var scriptTab = tpanel1.add("tab", undefined, undefined, {name: "scriptTab"});
 
 var list = scriptTab.add("listbox", undefined, undefined, {name: "list"}); 
     list.preferredSize.width = 300; 
-    list.preferredSize.height = 150; 
+    list.preferredSize.height = 200; 
 
 // ACTIONSPANEL
 // ============
@@ -76,7 +76,7 @@ var settingsTab = tpanel1.add("tab", undefined, undefined, {name: "settingsTab"}
     settingsTab.text = "Settings"; 
     settingsTab.orientation = "column"; 
     settingsTab.alignChildren = ["left","top"]; 
-    settingsTab.spacing = 10; 
+    settingsTab.spacing = 2; 
     settingsTab.margins = 10; 
 
 var speakerText = settingsTab.add("checkbox", undefined, undefined, {name: "speakerText"}); 
@@ -106,6 +106,69 @@ var ellipses = settingsTab.add("checkbox", undefined, undefined, {name: "ellipse
     }
 };
 
+var trimPeriods = settingsTab.add("checkbox", undefined, undefined, {name: "trimPeriods"}); 
+    trimPeriods.text = "Trim ...+ to ..."; 
+    trimPeriods.onClick = function() {
+    if (list != null) {
+        trimPeriodsFunction();
+        populateList() ;
+    }
+};
+
+var removeJP = settingsTab.add("checkbox", undefined, undefined, {name: "removeJP"}); 
+    removeJP.text = "Remove JP Characters"; 
+    removeJP.onClick = function() {
+    if (list != null) {
+        removeJPFunction();
+        populateList() ;
+    }
+};
+
+var replaceSplit = settingsTab.add("checkbox", undefined, undefined, {name: "replaceSplit"}); 
+    replaceSplit.text = "Replace // with New Line"; 
+    replaceSplit.onClick = function() {
+    if (list != null) {
+        replaceSplitFunction();
+        populateList() ;
+    }
+};
+
+var removePageNumbers = settingsTab.add("checkbox", undefined, undefined, {name: "removePageNumbers"}); 
+    removePageNumbers.text = "Remove Page Numbers"; 
+    removePageNumbers.onClick = function() {
+    if (list != null) {
+        removePageNumbersFunction();
+        populateList() ;
+    }
+};
+
+var removeParentheticalText = settingsTab.add("checkbox", undefined, undefined, {name: "removeParentheticalText"}); 
+    removeParentheticalText.text = "Remove Parathentical Text"; 
+    removeParentheticalText.onClick = function() {
+    if (list != null) {
+        removeParentheticalTextFunction();
+        populateList() ;
+    }
+};
+
+var removeBracketedText = settingsTab.add("checkbox", undefined, undefined, {name: "removeBracketedText"}); 
+    removeBracketedText.text = "Remove Bracketed Text"; 
+    removeBracketedText.onClick = function() {
+    if (list != null) {
+        removeBracketedTextFunction();
+        populateList() ;
+    }
+};
+
+var removeCurlyBracedText = settingsTab.add("checkbox", undefined, undefined, {name: "removeCurlyBracedText"}); 
+    removeCurlyBracedText.text = "Remove Curly Braced Text"; 
+    removeCurlyBracedText.onClick = function() {
+    if (list != null) {
+        removeCurlyBracedTextFunction();
+        populateList() ;
+    }
+};
+
 var saveSettings = settingsTab.add("checkbox", undefined, undefined, {name: "saveSettings"}); 
     saveSettings.text = "Save Settings";
 
@@ -121,6 +184,13 @@ if (loadLastScript.value && lastScriptPath != null) {
     speakerTextFunction();
     crossbarIFunction();
     ellipsesFunction();
+    trimPeriodsFunction();
+    removeJPFunction();
+    replaceSplitFunction();
+    removePageNumbersFunction();
+    removeParentheticalTextFunction();
+    removeBracketedTextFunction();
+    removeCurlyBracedTextFunction();
     populateList(); // Done again to also apply any of the above options if selected
 }
 
@@ -201,7 +271,13 @@ function resetOptions() {
     speakerText.value = 0;
     crossbarI.value = 0;
     ellipses.value = 0;
-
+    trimPeriods.value = 0;
+    removeJP.value = 0;
+    replaceSplit.value = 0;
+    removePageNumbers.value = 0;
+    removeParentheticalText.value = 0;
+    removeBracketedText.value = 0;
+    removeCurlyBracedText.value = 0;
 }
 
 function loadOptions() {
@@ -220,6 +296,9 @@ function loadOptions() {
             if (option[0] == "ellipses") {
                 ellipses.value = (option[1] == "true");
             }
+            if (option[0] == "trimPeriods") {
+                trimPeriods.value = (option[1] == "true");
+            }
             if (option[0] == "saveSettings") {
                 saveSettings.value = (option[1] == "true");
             }
@@ -232,6 +311,24 @@ function loadOptions() {
             if (option[0] == "scriptIndex") {
                 lastScriptIndex = option[1];
             }
+            if (option[0] == "removeJP") {
+                removeJP.value = (option[1] == "true");
+            }
+            if (option[0] == "replaceSplit") {
+                replaceSplit.value = (option[1] == "true");
+            }
+            if (option[0] == "removePageNumbers") {
+                removePageNumbers.value = (option[1] == "true");
+            }
+            if (option[0] == "removeParentheticalText") {
+                removeParentheticalText.value = (option[1] == "true");
+            }
+            if (option[0] == "removeBracketedText") {
+                removeBracketedText.value = (option[1] == "true");
+            }
+            if (option[0] == "removeCurlyBracedText") {
+                removeCurlyBracedText.value = (option[1] == "true");
+            }
         }
     }
 }
@@ -243,6 +340,7 @@ function saveOptions() {
         optionsFile.writeln("speakerText=" + speakerText.value);
         optionsFile.writeln("crossbarI=" + crossbarI.value);
         optionsFile.writeln("ellipses=" + ellipses.value);
+        optionsFile.writeln("trimPeriods=" + trimPeriods.value);
         optionsFile.writeln("saveSettings=" + saveSettings.value);
         optionsFile.writeln("loadLastScript=" + loadLastScript.value);
         if (loadLastScript.value) {
@@ -253,6 +351,12 @@ function saveOptions() {
                 optionsFile.writeln("lastScriptPath=" + scriptFile.toString());
             }
         }
+        optionsFile.writeln("removeJP=" + removeJP.value);
+        optionsFile.writeln("replaceSplit=" + replaceSplit.value);
+        optionsFile.writeln("removePageNumbers=" + removePageNumbers.value);
+        optionsFile.writeln("removeParentheticalText=" + removeParentheticalText.value);
+        optionsFile.writeln("removeBracketedText=" + removeBracketedText.value);
+        optionsFile.writeln("removeCurlyBracedText=" + removeCurlyBracedText.value);
     }
 }
 
@@ -293,4 +397,109 @@ function ellipsesFunction() {
             }
         }
     }
+}
+
+function trimPeriodsFunction() {
+    if (trimPeriods.value == 1) {
+        var regex = /\.{3,}/
+        for (var i=0; i<list.items.length; i++) {
+            if (script[i].match(regex)) {
+                script[i] = script[i].replace(regex, "...");
+            }
+        }
+    }
+}
+
+function removeJPFunction() {
+    if (removeJP.value) {
+        var regex = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]+/
+        for (var i=0; i<script.length; i++) {
+            if (script[i].match(regex)) {
+                script[i] = trim(script[i].replace(regex, ""));
+            }
+        }
+        script = removeEmptyLines(script);
+    }
+}
+
+function replaceSplitFunction() {
+    if (replaceSplit.value) {
+        var regex = /[\/\/]/
+        for (var i=0; i<script.length; i++) {
+            if (script[i].match(regex)) {
+                var lines = script[i].split('//');
+                for (var j=0; j<lines.length; j++) {
+                    if (j==0) {
+                        script[i] = trim(lines[0]);
+                    }
+                    else {
+                        script.splice(i + j, 0, trim(lines[j]));
+                    }
+                }
+            }
+        }
+    }
+}
+
+function removePageNumbersFunction() {
+    if (removePageNumbers.value) {
+        var regex = /([0-9]+)\.(\h*)/
+        for (var i=0; i<script.length; i++) {
+            if (script[i].match(regex)) {
+                script[i] = script[i].replace(regex, "");
+            }
+        }
+        script = removeEmptyLines(script);
+    }
+}
+
+function removeParentheticalTextFunction() {
+    if (removeParentheticalText.value) {
+        var regex = /\(.*\)/
+        for (var i=0; i<script.length; i++) {
+            if (script[i].match(regex)) {
+                script[i] = script[i].replace(regex, "");
+            }
+        }
+        script = removeEmptyLines(script);
+    }
+}
+
+function removeBracketedTextFunction() {
+    if (removeBracketedText.value) {
+        var regex = /\[.*\]/
+        for (var i=0; i<script.length; i++) {
+            if (script[i].match(regex)) {
+                script[i] = script[i].replace(regex, "");
+            }
+        }
+        script = removeEmptyLines(script);
+    }
+}
+
+function removeCurlyBracedTextFunction() {
+    if (removeCurlyBracedText.value) {
+        var regex = /\{.*\}/
+        for (var i=0; i<script.length; i++) {
+            if (script[i].match(regex)) {
+                script[i] = script[i].replace(regex, "");
+            }
+        }
+        script = removeEmptyLines(script);
+    }
+}
+
+function trim(strValue){
+    var str = new String(strValue);
+    return strValue !== null ? str.replace(/(^\s*)|(\s*$)/g,"") : "";
+}
+
+function removeEmptyLines(array) {
+    var newArray = [];
+    for (var i=0; i<array.length; i++) {
+        if (array[i] != '') {
+            newArray.push(array[i]);
+        }
+    }
+    return newArray;
 }
